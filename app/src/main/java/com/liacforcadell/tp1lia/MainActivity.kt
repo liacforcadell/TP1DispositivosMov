@@ -8,12 +8,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFromBaseline
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CornerSize
@@ -25,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,9 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.liacforcadell.tp1lia.ui.theme.TP1LiaTheme
 
 class MainActivity : ComponentActivity() {
@@ -60,6 +64,13 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun HomeApp() {
         var recetas by remember { mutableStateOf(mutableListOf<Receta>().toMutableStateList()) }
+        val ingredientesTexto = "tomate, cebolla, ajo"
+        val listaIngredientes: List<String> = ingredientesTexto.split(",").map { it.trim() }
+        recetas.add(Receta(nombre = "Nueva",
+            tiempo = "15 minutos",
+            ingredientes = listaIngredientes,
+            calorias = "500",
+            imagenUrl = "https://img.freepik.com/free-photo/seafood-pizza_1203-8951.jpg?t=st=1729129773~exp=1729133373~hmac=73f66106ca2d272d13db6d3b264ea939d380ad7c282a667d532f97d2feabad01&w=360"))
 
             Surface(
                 modifier = Modifier.fillMaxSize(),
@@ -67,9 +78,9 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalArrangement = Arrangement.Top
                 ) {
-                    FormularioIngreso { nuevaReceta ->
+                    FormularioIngreso() { nuevaReceta ->
                         recetas.add(nuevaReceta)
                     }
 
@@ -90,20 +101,20 @@ class MainActivity : ComponentActivity() {
         var toastMessage by remember { mutableStateOf("") }
 
         Column (
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.wrapContentHeight(),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Center
         ) {
             Etiqueta("Nombre del Plato")
             Entrada(value = nombrePlato, onValueChange = { nombrePlato = it }, label = "Ingresa el Nombre del Plato")
-//            Etiqueta("Tiempo de Preparación (minutos)")
-//            Entrada(value = tiempoPreparacion, onValueChange = { tiempoPreparacion = it }, label = "Ingresa el Tiempo de Preparación")
-//            Etiqueta("Ingredientes (separados por comas)")
-//            Entrada(value = ingredientesTexto, onValueChange = { ingredientesTexto = it }, label = "Ingresa los Ingredientes")
-//            Etiqueta("Calorías por Porción (kCal)")
-//            Entrada(value = calorias, onValueChange = { calorias = it }, label = "Ingresa las Calorías")
-//            Etiqueta("URL de la Imagen")
-//            Entrada(value = imagenUrl, onValueChange = { imagenUrl = it }, label = "Ingresa la URL de la Imagen")
+            Etiqueta("Tiempo de Preparación (minutos)")
+            Entrada(value = tiempoPreparacion, onValueChange = { tiempoPreparacion = it }, label = "Ingresa el Tiempo de Preparación")
+            Etiqueta("Ingredientes (separados por comas)")
+            Entrada(value = ingredientesTexto, onValueChange = { ingredientesTexto = it }, label = "Ingresa los Ingredientes")
+            Etiqueta("Calorías por Porción (kCal)")
+            Entrada(value = calorias, onValueChange = { calorias = it }, label = "Ingresa las Calorías")
+            Etiqueta("URL de la Imagen")
+            Entrada(value = imagenUrl, onValueChange = { imagenUrl = it }, label = "Ingresa la URL de la Imagen")
 
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -152,38 +163,60 @@ class MainActivity : ComponentActivity() {
                 .padding(8.dp),
             shape = MaterialTheme.shapes.medium
         ) {
-            Column(
+            Row(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = receta.nombre,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "Tiempo de preparación: ${receta.tiempo}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Text(
-                    text = "Ingredientes: ${receta.ingredientes.joinToString(", ")}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Calorías: ${receta.calorias}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
                 AsyncImage(
-                    model = receta.imagenUrl,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(receta.imagenUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = receta.nombre,
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier
+                        .height(200.dp)
+                        .width(150.dp)
+                        .padding(end = 16.dp),
                     contentScale = ContentScale.Crop
                 )
+
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = receta.nombre,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = "Tiempo de preparación: ${receta.tiempo}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = "Ingredientes: ${receta.ingredientes.joinToString(", ")}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = "Calorías: ${receta.calorias}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
+
         }
     }
 
@@ -191,7 +224,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun ListaRecetas(recetas: List<Receta>) {
         Log.d("ListaRecetas", "Número de recetas: ${recetas.size}")
-        if (!recetas.isEmpty()) {
+        if (recetas.isEmpty()) {
             Text("No hay recetas disponibles.", style = MaterialTheme.typography.headlineMedium)
         } else {
             LazyColumn {
